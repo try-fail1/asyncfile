@@ -1,52 +1,35 @@
 import threading
 from collections import deque
 
-class RunThis(threading.Thread):
-    looq = deque(maxlen=2)
-    futq = deque(maxlen=20)
-    event = threading.Event()
+class TRunner(threading.Thread):
+    que = deque(maxlen=20)
+    lq = deque(maxlen=2)
+    locker = threading.Lock()
     def __init__(self) -> None:
         super().__init__(daemon=True)
+        self.loop = None
     def run(self) -> None:
-        while self.looq:
+        while self.loop is None:
             try:
-                loop = self.looq.pop()
+                self.loop = self.lq.pop()
             except IndexError:
                 continue
-        while self.futq and 'loop' in locals():
+        while self.loop is not None:
             try:
-                popped = self.futq.pop()
+                popped = self.que.pop()
             except IndexError:
                 continue
-            if len(popped) == 3:
-                func, args, kwargs = popped
-                # For methods that do not return anything
-                # Using a future isn't needed
-                func(*args, **kwargs)
-                self.event.set()
-            else:
-                fut, func, args, kwargs = popped
-                try:
-                    loop.call_soon_threadsafe(fut.set_result, func(*args, **kwargs))
-                except Exception as e:
-                    loop.call_soon_threadsafe(fut.set_exception, e)
+            fut, func, args, kwargs = popped
+            try:
+                self.loop.call_soon_threadsafe(fut.set_result, func(*args, **kwargs))
+            except Exception as e:
+                self.loop.call_soon_threadsafe(fut.set_exception, e)
 
-RunThis().start()
+async def threadwork(*args, **kwargs):
+    func = kwargs.pop('func')
+    loop = kwargs.pop('loop')
+    fut = loop.create_future()
+    TRunner.que.append((fut, func, args, kwargs))
+    return await fut
 
-def put_loop_there(loop):
-    RunThis.looq.append(loop)
-class Inject:
-    def __init__(self, loop, base):
-        self.loop = loop
-        self.base = base
-    async def do_thread(self, *args, **kwargs):
-        func = getattr(self.base, kwargs.pop('func'))
-        result = kwargs.pop('result')
-        if result is False:
-            RunThis.futq.append((func, args, kwargs))
-            RunThis.event.clear()
-            RunThis.event.wait()
-        else:
-            fut = self.loop.create_future()
-            RunThis.futq.append((fut, func, args, kwargs))
-            return await fut
+TRunner().start()
