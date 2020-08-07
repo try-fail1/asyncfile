@@ -4,7 +4,6 @@ from collections import deque
 class TRunner(threading.Thread):
     que = deque(maxlen=20)
     lq = deque(maxlen=2)
-    locker = threading.Lock()
     def __init__(self) -> None:
         super().__init__(daemon=True)
         self.loop = None
