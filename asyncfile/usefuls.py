@@ -59,6 +59,10 @@ class AsyncMixin:
     async def __aexit__(self, *exc) -> None:
         await self.close()
 
+def generate_repr(cls):
+    cls.__repr__ = lambda self: f"<{self.__class__.__name__}: {self.name!r}>"
+    return cls
+
 class AwaitedForYou(Coroutine):
     
     __slots__ = ('coro', 'ret')

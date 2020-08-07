@@ -4,7 +4,7 @@ from os import PathLike
 from collections import UserList
 from typing import (Optional, Union, Any, Callable, IO, BinaryIO)
 
-from .usefuls import add_async_methods, add_properties, AsyncMixin, Loop
+from .usefuls import add_async_methods, add_properties, AsyncMixin, Loop, generate_repr
 from.threads import TRunner
 
 class ReturnExtended(UserList):
@@ -45,7 +45,8 @@ class AsyncTextIOWrapper(AsyncMixin):
         if isinstance(buffer,
                 (AsyncBufferedRandom,
                 AsyncBufferedReader,
-                AsyncBufferedWriter)):
+                AsyncBufferedWriter,
+                AsyncFileIO)):
             buffer = buffer._hidden
         self._hidden = io.TextIOWrapper(
             buffer, encoding, errors, newline,
@@ -56,8 +57,10 @@ class AsyncTextIOWrapper(AsyncMixin):
     def loop(self) -> asyncio.AbstractEventLoop:
         return self._loop
     
+    def __repr__(self):
+        return f"<{self.__class__.__name__}: name={self.name!r} encoding={self.encoding!r}>"
 
-
+@generate_repr
 @add_async_methods(
     _base_meths.extend(
     ['peek', 'read1', 'readinto1', 'readinto', 'detach']))
@@ -70,7 +73,7 @@ class AsyncBufferedReader(AsyncMixin):
             buffer_size: Optional[int] = io.DEFAULT_BUFFER_SIZE,
             *, loop: Loop = asyncio.get_event_loop()) -> None:
         self._loop = loop
-        if isinstance(raw, AsyncFileIO):
+        if isinstance(raw, (AsyncFileIO, AsyncTextIOWrapper)):
             raw = raw._hidden
         self._hidden = io.BufferedReader(raw, buffer_size)
         TRunner.lq.append(loop)
@@ -79,7 +82,7 @@ class AsyncBufferedReader(AsyncMixin):
     def loop(self) -> asyncio.AbstractEventLoop:
         return self._loop
 
-
+@generate_repr
 @add_async_methods(
     _base_meths.extend(['detach', 'read1', 'readinto1', 'readinto']))
 @add_properties(['closed', 'raw', 'name', 'mode'])
@@ -91,7 +94,7 @@ class AsyncBufferedWriter(AsyncMixin):
             buffer_size: Optional[int] = io.DEFAULT_BUFFER_SIZE,
             *, loop: Loop = asyncio.get_event_loop()) -> None:
         self._loop = loop
-        if isinstance(raw, AsyncFileIO):
+        if isinstance(raw, (AsyncFileIO, AsyncTextIOWrapper)):
             raw = raw._hidden
         self._hidden = io.BufferedWriter(raw, buffer_size)
         TRunner.lq.append(loop)
@@ -100,7 +103,7 @@ class AsyncBufferedWriter(AsyncMixin):
     def loop(self) -> asyncio.AbstractEventLoop:
         return self._loop
 
-
+@generate_repr
 @add_async_methods(
     _base_meths.extend(
     ['detach', 'read1', 'readinto1', 'readinto', 'peek']))
@@ -111,7 +114,7 @@ class AsyncBufferedRandom(AsyncMixin):
             buffer_size: Optional[int] = io.DEFAULT_BUFFER_SIZE,
             *, loop: Loop = asyncio.get_event_loop()) -> None:
         self._loop = loop
-        if isinstance(raw, AsyncFileIO):
+        if isinstance(raw, AsyncFileIO, AsyncTextIOWrapper):
             raw = raw._hidden
         self._hidden = io.BufferedRandom(raw, buffer_size)
 
@@ -134,3 +137,6 @@ class AsyncFileIO(AsyncMixin):
     @property
     def loop(self) -> asyncio.AbstractEventLoop:
         return self._loop
+    
+    def __repr__(self):
+        f"<{self.__class__.__name__}: name={self.name!r} closefd={self.closefd!r}"
