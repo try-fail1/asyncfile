@@ -7,4 +7,4 @@ from .classes import (
 )
 from .openup import open
 
-__version__ = '0.0.0rc.1'
+__version__ = '1.0.0'

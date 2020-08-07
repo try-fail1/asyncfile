@@ -29,14 +29,15 @@ setuptools.setup(
     python_requires='>=3.6.0',
     keywords=['python', 'asyncio', 'fileio'],
     classifiers=[
-        'Framwork :: AsyncIO',
-        'Development Status :: Production/Stable',
-        'License :: OSI :: MIT',
+        'Framework :: AsyncIO',
+        'Development Status :: 4 - Beta',
+        'License :: OSI Approved :: MIT License',
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
         'Intended Audience :: Developers',
-        'Natural Language :: English'
+        'Natural Language :: English',
+        'Topic :: Utilities'
     ]
 )
